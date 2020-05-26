@@ -8,6 +8,7 @@ import { BasePage } from "./source/lib/BasePage.ts";
 import { StaticComponent } from "./source/lib/components/404.ts";
 import RequestData from "./source/lib/RequestData.ts";
 import Cookies from "./source/lib/Cookies.ts";
+import Methods from "./source/lib/helper/method.ts";
 
 const s = serve({ port: 8000 });
 console.log("http://localhost:8000/");
@@ -31,23 +32,21 @@ for await (const req of s) {
   var CookieHeader = req.headers.get('Cookie')
   if(CookieHeader==null) CookieHeader="";
 
+  var postdata :any = {};
+
   if(req.contentLength!=null)
   {
     const buf = new Uint8Array(req.contentLength);
     var c = req.body.read(buf);
     const text = new TextDecoder().decode(buf);
-    
+
     if(req.headers.get("Content-Type") == "application/x-www-form-urlencoded")
-    {
-      console.log("HTML Formular Daten")
-      console.log(text);
-      text.split('&').map(v=>v.split('=')[1]).forEach(v=>{console.log(v);console.log(unescape(v))})
-    }
+      Methods.POST(text,req.headers.get("Content-Type"));
   }
   
 
   var page: undefined | BasePage = registeredPages.find((el) => el.matchingPathCheck(req.url)) //Finde Seite die matcht
-  page?.body(new RequestData(req.url,undefined,undefined,Cookies.parse(CookieHeader),req.headers)) //Generiere Body
+  page?.body(new RequestData(req.url,undefined,undefined,Cookies.parse(CookieHeader),postdata,req.headers)) //Generiere Body
     .then(
       (pageanswer) => { 
 
@@ -58,7 +57,7 @@ for await (const req of s) {
 
   // Falls keine Seite gefunden wurde
   if (page == undefined) {
-    StaticHandler.body(new RequestData(req.url,undefined,undefined,Cookies.parse(CookieHeader),req.headers)).then((resolved) => {
+    StaticHandler.body(new RequestData(req.url,undefined,undefined,Cookies.parse(CookieHeader),postdata,req.headers)).then((resolved) => {
       if(typeof(resolved) == "string")
       { req.respond({ body: resolved }); console.timeEnd('PageCall of '+req.url); }
       else{

@@ -15,11 +15,11 @@ export default class Methods {
     //                              Data:[]
     //                              Switches: ["123"]
     //                          }
-    static GET(path: string): GETData | undefined {
+    static GET(path: string): MethodData | undefined {
         if(path.indexOf('?')===-1) return undefined;
 
         var pairs = path.split('?')[1].split('&');
-        var parisKVP : GETData = new GETData();
+        var parisKVP : MethodData = new MethodData();
 
         pairs.forEach((v)=>{
             if(v.indexOf('=')===-1) {parisKVP.Switches.push(v)}
@@ -29,9 +29,22 @@ export default class Methods {
             }
         });
     }
+    static POST(data: string, type : string | POSTHeaders | null): MethodData | undefined {
+        var postdata: MethodData = new MethodData();
+        
+        if(type == POSTHeaders.HtmlFormular)
+            data.split('&')
+                .map(v=>v.split('='))
+                .forEach(v=>{ postdata.Data[unescape(v[0])] = unescape(v[1])})
+
+        return postdata;
+    }
 }
 
-export class GETData {
+export class MethodData {
     Switches: Array<string> = [];
     Data: any;
+}
+export enum POSTHeaders {
+    HtmlFormular= "application/x-www-form-urlencoded"
 }

@@ -1,33 +1,63 @@
 import { UUID } from "./id/UUID.ts";
+import Connection from "./sqllite/Connection.ts";
+import BaseField from "./sqllite/BaseField.ts";
 
 export default class Session {
-    SessionStorage: SessionStorage;
+    private static AllSessionStorages: Record<string, SessionStorage> = {};
+    SessionStorage: SessionStorage = new SessionStorage("");
+    UUID: string="NOID";
+    private static con = new Connection("/data/db.sqlite");
 
     constructor(proclaimedSessionID: string | undefined) {
-        if(!!proclaimedSessionID) 
-            if(this.checkIfIdExists(proclaimedSessionID)) 
-                this.SessionStorage = new SessionStorage(proclaimedSessionID);
-                
-        throw new Error("SessionID doesn ot exist.")
+        Session.con.checkTableExists('session').catch(()=>{
+            Session.con.createTable("session", [new BaseField('ESSID').isPrimary().setType("VARCHAR(128)")])
+        }).finally(()=>{
+            if (!!proclaimedSessionID) {
+                if (!!Session.AllSessionStorages[proclaimedSessionID]) {
+                    this.SessionStorage = Session.AllSessionStorages[proclaimedSessionID];
+                    this.UUID = proclaimedSessionID;
+                    //console.log("Loaded existing S")
+                } else {
+                    // TODO: Create new Session into SQL Database
+                    this.SessionStorage = new SessionStorage("");
+                    this.UUID = UUID.generate(128);
+                    Session.AllSessionStorages[this.UUID]=this.SessionStorage;
+                    //console.log("Created S")
+                }
+            }
+        });
     }
 
-    private checkIfIdExists(id: string):boolean {
+    store(name: string, data:string) {
+
+    }
+    getID():string{
+        return this.UUID;
+    }
+
+    private checkIfIdExists(id: string): boolean {
         return true;
     }
 }
 
 export class SessionStorage {
-    Data: Array<BasicSeasonDataPair<string>> = [];
+    Data: Array<BasicSessionDataPair<string>> = [];
+
+    LData: any={};
 
     constructor(id: string) {
 
     }
 
-    getData(Name: string){
-        
+    getData(name: string) {
+        return this.LData[name];
     }
 
-    static Load(id: string) : SessionStorage {
+    setData(name: string, value:string) {
+        this.LData[name] = value;
+    }
+
+    static Load(id: string): SessionStorage {
         // Session Data should be loaded here!
         var retval = new SessionStorage(id);
 
@@ -39,8 +69,8 @@ export class SessionStorage {
     }
 }
 
-export class BasicSeasonDataPair<T> {
-    Name: string="";
+export class BasicSessionDataPair<T> {
+    Name: string = "";
     Data: T;
     DataType: DataType;
 
@@ -50,8 +80,8 @@ export class BasicSeasonDataPair<T> {
         this.DataType = DataType;
     }
 
-    setData(Data: T){
-        this.Data=Data;
+    setData(Data: T) {
+        this.Data = Data;
         return this;
     }
 }

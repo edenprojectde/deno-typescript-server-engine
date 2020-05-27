@@ -9,6 +9,8 @@ import { StaticComponent } from "./source/lib/components/404.ts";
 import RequestData from "./source/lib/RequestData.ts";
 import Cookies from "./source/lib/Cookies.ts";
 import Methods from "./source/lib/helper/method.ts";
+import { LoginPage } from "./source/sites/login.ts";
+import Session from "./source/lib/Session.ts";
 
 const s = serve({ port: 8000 });
 console.log("http://localhost:8000/");
@@ -17,7 +19,8 @@ var registeredPages = [
   new Index(),
   new BlogPage(),
   new EditorPage(),
-  new SessionPage()
+  new SessionPage(),
+  new LoginPage()
 ]
 
 // Der StaticHandler sorgt dafür das statische Daten geladen werden & falls nichts gefunden wird eine 404 Seite angezeigt wird.
@@ -27,10 +30,21 @@ var StaticHandler = new StaticComponent()
                           .setErrorMessage("Keine Seite/Datei ist unter diesem Pfad registriert.");
 
 for await (const req of s) {
-  console.time('PageCall of '+req.url);
+  //console.time('PageCall of '+req.url);
 
   var CookieHeader = req.headers.get('Cookie')
-  if(CookieHeader==null) CookieHeader="";
+  if(CookieHeader==null) {CookieHeader=""; var session = new Session(undefined);}
+  else {
+    var CookieHeaderObj = Cookies.parse(CookieHeader);
+
+    if(!!CookieHeaderObj['ESESSID']){
+      var session = new Session(CookieHeaderObj['ESESSID']);
+      //console.log("found session cookie!")
+    } else {
+      var session = new Session(undefined);
+      //console.log("NO session!")
+    }
+  }
 
   var postdata :any = {};
 
@@ -46,31 +60,35 @@ for await (const req of s) {
   
 
   var page: undefined | BasePage = registeredPages.find((el) => el.matchingPathCheck(req.url)) //Finde Seite die matcht
-  page?.body(new RequestData(req.url,undefined,undefined,Cookies.parse(CookieHeader),postdata,req.headers)) //Generiere Body
+  page?.body(new RequestData(req.url,undefined,session,CookieHeaderObj,postdata,req.headers)) //Generiere Body
     .then(
       (pageanswer) => { 
 
+        pageanswer.header.set('SET-COOKIE',"ESESSID="+session.getID());
+
         req.respond({ body: pageanswer.content, headers: pageanswer.header}); 
-        console.timeEnd('PageCall of '+req.url);
+        //console.timeEnd('PageCall of '+req.url);
       }
     ) // Sende Body (Ganze Seite)
 
   // Falls keine Seite gefunden wurde
   if (page == undefined) {
-    StaticHandler.body(new RequestData(req.url,undefined,undefined,Cookies.parse(CookieHeader),postdata,req.headers)).then((resolved) => {
+    StaticHandler.body(new RequestData(req.url,undefined,session,CookieHeaderObj,postdata,req.headers)).then((resolved) => {
       if(typeof(resolved) == "string")
       { req.respond({ body: resolved }); console.timeEnd('PageCall of '+req.url); }
       else{
         var headers = new Headers();
         if(!!resolved.mime) headers.set('Content-Type',resolved.mime);
+
+        headers.set('SET-COOKIE',"ESESSID="+session.getID());
         req.respond({ body: resolved.content, headers: headers})
 
-        console.timeEnd('PageCall of '+req.url);
+        //console.timeEnd('PageCall of '+req.url);
       }
     }).catch((rejected)=>{
       req.respond({ body: rejected, status: 404 })
 
-      console.timeEnd('PageCall of '+req.url);
+      //console.timeEnd('PageCall of '+req.url);
     });
   }
 }

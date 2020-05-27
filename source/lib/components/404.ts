@@ -40,7 +40,7 @@ export class StaticComponent extends BaseComponent {
             this.args=args.url;
             if(this.staticEnabled)
             this.tryStatic().then((file)=>{
-                this.log("Found in statics!");
+                //this.log("Found in statics!");
                 
                 resolve(file);
             }).catch(()=>{

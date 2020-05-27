@@ -28,7 +28,6 @@ export class BlogPost extends BaseComponent {
             ])*/
             //this.db.query("SELECT * FROM blogposts WHERE id=?",["1"]);
 
-            this.log(args);
             resolve(new FileData().setContent(`<div id='blogpost'></div>`));
         });
     }

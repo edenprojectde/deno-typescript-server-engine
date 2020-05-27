@@ -4,6 +4,7 @@ import { getCurrentScriptname, getPathOnly } from "../../lib/helper/script.ts";
 import { FileData } from "../../lib/io/file.ts";
 import { Script, RessourceCollection, Position } from "../../lib/io/ressource.ts";
 import RequestData from "../../lib/RequestData.ts";
+import { DebugComponent } from "../../lib/components/debug.ts";
 
 export class EditorComponent extends BaseComponent {
     constructor() {
@@ -17,23 +18,12 @@ export class EditorComponent extends BaseComponent {
     // TODO: Make a cache to not load everything a million times over ya dork.
     async body(args: RequestData): Promise<FileData> {
         return new Promise((resolve, reject) => {
-            //this.log(args);
-            var allHeaders = "";
-            
-            for (let entry of args.rawheaders) {
-                allHeaders+=entry[0]+" : "+entry[1]+"<br>"
-            }
-
-            var fd = new FileData();
-            if(!args.cookies["Cookies"]) {
-                fd.headers.set("Set-Cookie","KEYNOTE=12")
-            }
 
 
-            resolve(fd.setContent(`
+            resolve(new FileData().setContent(`
                 <div id="editorjs"></div>
-                <div class="customCss">${allHeaders}</div>
-            `));
+                <div class="customCss">CustomCss!</div>
+            `+DebugComponent.asSubComponent(args).content));
         });
     }
     ressources() : Promise<RessourceCollection> {

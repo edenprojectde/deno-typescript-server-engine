@@ -43,7 +43,7 @@ export default class Methods {
 
 export class MethodData {
     Switches: Array<string> = [];
-    Data: any;
+    Data: any = {};
 }
 export enum POSTHeaders {
     HtmlFormular= "application/x-www-form-urlencoded"

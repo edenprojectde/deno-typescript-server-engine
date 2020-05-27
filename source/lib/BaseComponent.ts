@@ -70,5 +70,8 @@ export abstract class BaseComponent extends BaseDebugable implements IComponent 
     error(): string {
         throw new Error("Method not implemented.");
     }
-
+    
+    static asSubComponent(args: RequestData) : FileData {
+        throw new Error("Method not implemented.");
+    }
 }

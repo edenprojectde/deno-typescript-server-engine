@@ -10,7 +10,7 @@ import RequestData from "./source/lib/RequestData.ts";
 import Cookies from "./source/lib/Cookies.ts";
 import Methods from "./source/lib/helper/method.ts";
 import { LoginPage } from "./source/sites/login.ts";
-import Session from "./source/lib/Session.ts";
+import { Session } from "./source/lib/Session.ts";
 
 const s = serve({ port: 8000 });
 console.log("http://localhost:8000/");

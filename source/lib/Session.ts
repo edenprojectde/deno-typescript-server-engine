@@ -2,26 +2,65 @@ import { UUID } from "./id/UUID.ts";
 import Connection from "./sqllite/Connection.ts";
 import BaseField from "./sqllite/BaseField.ts";
 
-export default class Session {
+
+
+class LocalSession {
     private static AllSessionStorages: Record<string, SessionStorage> = {};
     SessionStorage: SessionStorage = new SessionStorage("");
     UUID: string="NOID";
     private static con = new Connection("/data/db.sqlite");
 
     constructor(proclaimedSessionID: string | undefined) {
-        Session.con.checkTableExists('session').catch(()=>{
-            Session.con.createTable("session", [new BaseField('ESSID').isPrimary().setType("VARCHAR(128)")])
+        LocalSession.con.checkTableExists('session').catch(()=>{
+            LocalSession.con.createTable("session", [new BaseField('ESSID').isPrimary().setType("VARCHAR(128)")])
         }).finally(()=>{
             if (!!proclaimedSessionID) {
-                if (!!Session.AllSessionStorages[proclaimedSessionID]) {
-                    this.SessionStorage = Session.AllSessionStorages[proclaimedSessionID];
+                if (!!LocalSession.AllSessionStorages[proclaimedSessionID]) {
+                    this.SessionStorage = LocalSession.AllSessionStorages[proclaimedSessionID];
                     this.UUID = proclaimedSessionID;
                     //console.log("Loaded existing S")
                 } else {
                     // TODO: Create new Session into SQL Database
                     this.SessionStorage = new SessionStorage("");
                     this.UUID = UUID.generate(128);
-                    Session.AllSessionStorages[this.UUID]=this.SessionStorage;
+                    LocalSession.AllSessionStorages[this.UUID]=this.SessionStorage;
+                    //console.log("Created S")
+                }
+            }
+        });
+    }
+
+    store(name: string, data:string) {
+
+    }
+    getID():string{
+        return this.UUID;
+    }
+
+    private checkIfIdExists(id: string): boolean {
+        return true;
+    }
+}
+export class DBSession {
+    private static AllSessionStorages: Record<string, SessionStorage> = {};
+    SessionStorage: SessionStorage = new SessionStorage("");
+    UUID: string="NOID";
+    private static con = new Connection("/data/db.sqlite");
+
+    constructor(proclaimedSessionID: string | undefined) {
+        DBSession.con.checkTableExists('session').catch(()=>{
+            DBSession.con.createTable("session", [new BaseField('ESSID').isPrimary().setType("VARCHAR(128)")])
+        }).finally(()=>{
+            if (!!proclaimedSessionID) {
+                if (!!DBSession.AllSessionStorages[proclaimedSessionID]) {
+                    this.SessionStorage = DBSession.AllSessionStorages[proclaimedSessionID];
+                    this.UUID = proclaimedSessionID;
+                    //console.log("Loaded existing S")
+                } else {
+                    // TODO: Create new Session into SQL Database
+                    this.SessionStorage = new SessionStorage("");
+                    this.UUID = UUID.generate(128);
+                    DBSession.AllSessionStorages[this.UUID]=this.SessionStorage;
                     //console.log("Created S")
                 }
             }
@@ -89,3 +128,5 @@ export class BasicSessionDataPair<T> {
 enum DataType {
     Account
 }
+
+export {LocalSession as Session};

@@ -1,4 +1,4 @@
-import Session from "./Session.ts";
+import { Session } from "./Session.ts";
 import Cookies from "./Cookies.ts";
 import Methods, { MethodData } from "./helper/method.ts";
 

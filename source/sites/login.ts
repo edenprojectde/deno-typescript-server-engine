@@ -1,6 +1,7 @@
 import { BasePage } from "../lib/BasePage.ts";
 import { TopMenu } from "./components/topmenu.ts";
 import { TestOutput } from "../lib/components/testoutput.ts";
+import { GoogleloginComponent } from "./components/googlelogin.ts";
 
 export class LoginPage extends BasePage {
     matchingPathCheck(path: string): boolean {
@@ -11,7 +12,8 @@ export class LoginPage extends BasePage {
 
         this.Components = [
             new TopMenu(),
-            new TestOutput("Login takes over!")
+            new TestOutput("Login takes over!"),
+            new GoogleloginComponent()
         ];
     }
     error() : string {

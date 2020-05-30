@@ -2,5 +2,6 @@ export interface IField {
     name: string,
     ai: boolean,
     pk:boolean,
-    type: string
+    type: string,
+    unique:boolean
 }

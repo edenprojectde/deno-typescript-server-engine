@@ -1,30 +1,90 @@
-export class Script implements IRessource{
-    Src: string;
-    Module:boolean = false;
-    LibaryName: string;
-    Position:Position=Position.Head;
+export class Script implements IRessource, IRessourceDescription{
+    private Src: string;
+    private Module:boolean = false;
+    private Defer:boolean = false;
+    private Async:boolean = false;
+    private LibaryName: string;
+    private Position:Position=Position.Head;
 
 
-	constructor(Src: string, LibaryName:string) {
-        this.Src=Src;
-        this.LibaryName = LibaryName;
+	constructor(src: string, libname:string) {
+        this.Src=src;
+        this.LibaryName = libname;
     }
 	
     getHTML(): string{
-        return `<script src=${this.Src} ${this.Module?'type="module"':''}></script>`;
+        return `<script src="${this.Src}" ${this.Module?'type="module"':''} ${this.Defer?'defer':''} ${this.Async?'async':''}></script>`;
+    }
+    getPosition() : Position {
+        return this.Position;
     }
 
     setPosition(position:Position) : Script{
         this.Position = position;
         return this
     }
-    setModule() : Script{
+    setIsModule() : Script{
         this.Module = true;
         return this
     }
+
+    setIsAsync() : Script{
+        this.Module = true;
+        return this
+    }
+    setIsDefer() : Script{
+        this.Module = true;
+        return this
+    }
+    getDescription(): string {
+        return this.LibaryName;
+    }
+}
+export class InlineScript implements IRessource,IRessourceDescription {
+    private Content: string;
+    private LibaryName: string;
+    private Position:Position=Position.Head;
+
+
+	constructor(content: string, libname:string) {
+        this.Content=content;
+        this.LibaryName = libname;
+    }
+    getDescription(): string {
+        return this.LibaryName;
+    }
+	
+    getHTML(): string{
+        return `<script>${this.Content}</script>`;
+    }
+    getPosition() : Position {
+        return this.Position;
+    }
+    setPosition(position:Position) : InlineScript{
+        this.Position = position;
+        return this;
+    }
 }
 export class Meta {
+    private Position:Position=Position.Head;
+    private Content: string;
+    private Name: string;
 
+    constructor(name: string, content: string) {
+        this.Name=name;
+        this.Content = content;
+    }
+
+    getHTML(): string{
+        return `<meta name="${this.Name}" content="${this.Content}" ></script>`;
+    }
+    getPosition() : Position {
+        return this.Position;
+    }
+
+    setPosition(position:Position) : Script{
+        throw new Error("Position can not be set on Meta Ressources!");
+    }
 }
 export class Style {}
 
@@ -38,10 +98,20 @@ export class RessourceCollection {
 
     generateHTML(position:Position) : string {
         var retval = "";
-        this.Ressources.filter((v)=>v.Position==position).forEach((v)=>{
+        this.Ressources.filter((v)=>v.getPosition()==position).forEach((v)=>{
             retval+=v.getHTML();
         });
         return retval;
+    }
+
+    getDescriptedRessources() : string[] {
+        var ressources = this.Ressources as Array<any>;
+        ressources
+            .filter((v)=>v.getDescription!=undefined)
+            .map((v)=>{
+                return v.getDescription();
+            });
+        return ressources;
     }
 }
 
@@ -53,5 +123,9 @@ export enum Position {
 
 export interface IRessource {
     getHTML():string;
-    Position:Position
+    getPosition():Position;
+    setPosition(position:Position): IRessource;
+}
+export interface IRessourceDescription {
+    getDescription(): string;
 }

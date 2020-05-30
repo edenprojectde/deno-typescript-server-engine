@@ -55,7 +55,7 @@ for await (const req of s) {
     const text = new TextDecoder().decode(buf);
 
     if(req.headers.get("Content-Type") == "application/x-www-form-urlencoded")
-      Methods.POST(text,req.headers.get("Content-Type"));
+      postdata = Methods.POST(text,req.headers.get("Content-Type"));
   }
   
 

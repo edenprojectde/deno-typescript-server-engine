@@ -7,13 +7,13 @@ import BaseField from "./sqllite/BaseField.ts";
 class LocalSession {
     private static AllSessionStorages: Record<string, SessionStorage> = {};
     SessionStorage: SessionStorage = new SessionStorage("");
-    UUID: string="NOID";
+    UUID: string = "NOID";
     private static con = new Connection("/data/db.sqlite");
 
     constructor(proclaimedSessionID: string | undefined) {
-        LocalSession.con.checkTableExists('session').catch(()=>{
+        LocalSession.con.checkTableExists('session').catch(() => {
             LocalSession.con.createTable("session", [new BaseField('ESSID').isPrimary().setType("VARCHAR(128)")])
-        }).finally(()=>{
+        }).finally(() => {
             if (!!proclaimedSessionID) {
                 if (!!LocalSession.AllSessionStorages[proclaimedSessionID]) {
                     this.SessionStorage = LocalSession.AllSessionStorages[proclaimedSessionID];
@@ -23,17 +23,17 @@ class LocalSession {
                     // TODO: Create new Session into SQL Database
                     this.SessionStorage = new SessionStorage("");
                     this.UUID = UUID.generate(128);
-                    LocalSession.AllSessionStorages[this.UUID]=this.SessionStorage;
+                    LocalSession.AllSessionStorages[this.UUID] = this.SessionStorage;
                     //console.log("Created S")
                 }
             }
         });
     }
 
-    store(name: string, data:string) {
+    store(name: string, data: string) {
 
     }
-    getID():string{
+    getID(): string {
         return this.UUID;
     }
 
@@ -44,45 +44,49 @@ class LocalSession {
 export class DBSession {
     private static AllSessionStorages: Record<string, SessionStorage> = {};
     SessionStorage: SessionStorage = new SessionStorage("");
-    UUID: string="NOID";
+    UUID: string = "NOID";
     private static con = new Connection("/data/db.sqlite");
 
-    constructor(proclaimedSessionID: string | undefined) {
-        DBSession.con.checkTableExists('session').catch(()=>{
-            DBSession.con.createTable("session", [new BaseField('ESSID').isPrimary().setType("VARCHAR(128)")])
-        }).finally(()=>{
-            if (!!proclaimedSessionID) {
-                if (!!DBSession.AllSessionStorages[proclaimedSessionID]) {
-                    this.SessionStorage = DBSession.AllSessionStorages[proclaimedSessionID];
-                    this.UUID = proclaimedSessionID;
-                    //console.log("Loaded existing S")
-                } else {
-                    // TODO: Create new Session into SQL Database
-                    this.SessionStorage = new SessionStorage("");
-                    this.UUID = UUID.generate(128);
-                    DBSession.AllSessionStorages[this.UUID]=this.SessionStorage;
-                    //console.log("Created S")
+    constructor(proclaimedSessionID: string|undefined) {
+        DBSession.con.checkTableExists('session').catch(() => {
+            DBSession.con.createTable("session", [new BaseField('essid').isUnique().setType("VARCHAR(256)")])
+        }).finally(() => {
+
+            //console.log("Check ID Exists")
+            this.checkIfIdExists(proclaimedSessionID).then(() => {
+                //console.log("Found ID in DB!")
+                this.UUID = proclaimedSessionID as string;
+            }).catch((reason) => {
+                console.log("Reason: " + reason)
+
+                this.UUID = UUID.generate(256);
+
+                try {
+                    DBSession.con.query("INSERT INTO session VALUES(?)", [this.UUID])
+                } catch (error) {
+                    console.log(error);
                 }
-            }
+            })
+
         });
     }
 
-    store(name: string, data:string) {
+    store(name: string, data: string) {
 
     }
-    getID():string{
+    getID(): string {
         return this.UUID;
     }
 
-    private checkIfIdExists(id: string): boolean {
-        return true;
+    private checkIfIdExists(id: string | undefined): Promise<boolean> {
+        return DBSession.con.checkIdExists("session", "essid", id);
     }
 }
 
 export class SessionStorage {
     Data: Array<BasicSessionDataPair<string>> = [];
 
-    LData: any={};
+    LData: any = {};
 
     constructor(id: string) {
 
@@ -92,7 +96,7 @@ export class SessionStorage {
         return this.LData[name];
     }
 
-    setData(name: string, value:string) {
+    setData(name: string, value: string) {
         this.LData[name] = value;
     }
 
@@ -129,4 +133,4 @@ enum DataType {
     Account
 }
 
-export {LocalSession as Session};
+export { DBSession as Session };

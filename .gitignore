@@ -3,3 +3,4 @@
 /dependencygraph.svg
 /package-lock.json
 /package.json
+data/db.sqlite

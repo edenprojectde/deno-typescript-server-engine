@@ -56,16 +56,14 @@ export class DBSession {
             this.checkIfIdExists(proclaimedSessionID).then(() => {
                 //console.log("Found ID in DB!")
                 this.UUID = proclaimedSessionID as string;
-            }).catch((reason) => {
+            }).catch(async(reason) => {
                 console.log("Reason: " + reason)
 
                 this.UUID = UUID.generate(256);
 
-                try {
-                    DBSession.con.query("INSERT INTO session VALUES(?)", [this.UUID])
-                } catch (error) {
-                    console.log(error);
-                }
+                
+                await (await DBSession.con.db).execute("INSERT INTO session VALUES(?)", [this.UUID])
+                
             })
 
         });

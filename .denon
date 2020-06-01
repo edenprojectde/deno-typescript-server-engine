@@ -1,29 +1,29 @@
 {
-    "files": [
-        "main.ts"
-    ],
-    "quiet": false,
-    "debug": true,
-    "fullscreen": true,
-    "extensions": [
-        ".ts",
-        ".py",
-        ".json"
-    ],
-    "interval": 500,
-    "watch": [
-        "source/"
-    ],
-    "deno_args":[
-        "--allow-net",
-        "--allow-read",
-        "--allow-write"
-    ],
-    "execute": {
-        ".js": ["deno", "run"],
-        ".ts": ["deno", "run"],
-        ".py": ["python"]
-    },
-    "fmt": false,
-    "test": true
+    "$schema": "https://deno.land/x/denon/schema.json",
+    "scripts": {
+        "start":  {
+            "cmd":"main.ts",
+            "desc": "Startet alles.",
+            
+            "allow": [
+                "net",
+                "all",
+                "read",
+                "write"
+            ],
+            "unstable": true
+        },
+        "test":  {
+            "cmd":"deno test",
+            "desc": "Startet alles.",
+            
+            "allow": [
+                "net",
+                "all",
+                "read",
+                "write"
+            ],
+            "unstable": true
+        }
+    }
 }

@@ -104,6 +104,9 @@ export class RessourceCollection {
         return retval;
     }
 
+    /**
+     * Get the names of all Ressource files registred.
+     */
     getDescriptedRessources() : string[] {
         var ressources = this.Ressources as Array<any>;
         ressources

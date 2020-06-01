@@ -1,49 +1,49 @@
-import { open, save, DB } from "https://deno.land/x/sqlite/mod.ts";
-import { Rows } from "https://deno.land/x/sqlite/src/rows.js";
+import { connect } from "https://deno.land/x/cotton/mod.ts";
+import { BaseAdapter } from "https://deno.land/x/cotton/src/baseadapter.ts";
 import { IField } from "./IField.ts";
 
 export default class Connection {
-    dbcon: DB | undefined;
+    //private _ba : BaseAdapter | undefined;
+
+
+    path: string;
 
     constructor(path: string) {
-        console.log(Deno.cwd() + path)
-        open(Deno.cwd() + path).then((db) => {
-            this.dbcon = db;
-
-        }).catch((reason) => { console.log(reason) })
+        console.log("Init")
+        this.path = Deno.cwd() + path;
     }
 
-    query(query: string, values: any): Rows | undefined {
-        var retval = this.dbcon?.query(query, values);
-        
-        if (!!this.dbcon)
-            save(this.dbcon, undefined);
-        return retval;
+    get db(): Promise<BaseAdapter> {
+        return new Promise(async (resolve, reject) => {
+            var ba = await connect({
+                type: "sqlite",
+                database: this.path
+            })
+            //resolve(ba)
+            
+        });
     }
 
-    createTable(name: string, fields: Array<IField>): Promise<Rows> {
-        return new Promise((resolve, reject) => {
-            if (!this.dbcon) reject('No Connection alive!')
+    createTable(name: string, fields: Array<IField>): Promise<void> {
+        return new Promise(async (resolve, reject) => {
 
             var tblstrings: Array<string> = [];
             fields.forEach((val, i) => {
                 tblstrings.push(val.name + " " + val.type + " " + (val.pk ? "PRIMARY KEY" : "") + " " + (val.unique ? "UNIQUE" : "") + " " + (val.ai ? "AUTOINCREMENT" : ""));
             });
 
-            resolve(this.dbcon?.query("CREATE TABLE IF NOT EXISTS " + name + "(" + tblstrings.join(",") + ")", []));
+            (await this.db).execute("CREATE TABLE IF NOT EXISTS " + name + "(" + tblstrings.join(",") + ")");
 
-            if (!!this.dbcon)
-                save(this.dbcon, undefined);
+            resolve();
         });
     }
-    dropTable(name: string): Promise<Rows> {
-        return new Promise((resolve, reject) => {
-            if (!this.dbcon) reject('No Connection alive!')
+    dropTable(name: string): Promise<void> {
+        return new Promise(async (resolve, reject) => {
 
-            resolve(this.dbcon?.query("DROP TABLE " + name, []));
+            (await this.db).execute("DROP TABLE " + name);
 
-            if (!!this.dbcon)
-                save(this.dbcon, undefined);
+
+            resolve();
         });
     }
     /**
@@ -53,34 +53,26 @@ export default class Connection {
      * @param value Der Wert nachdem gesucht wird, rejected falls undefined.
      */
     checkIdExists(table: string, idcolumnname: string | undefined, value: string | undefined): Promise<boolean> {
-        return new Promise((resolve, reject) => {
-            if (!value) { reject('Undefined as Val is not valid'); return; }
-            if (!this.dbcon) reject('No Connection alive!')
+        return new Promise(async (resolve, reject) => {
+            if (!value) { reject('Undefined as Val is not valid'); }
+            else {
 
-            var rows = this.dbcon?.query("SELECT " + idcolumnname + " FROM " + table + " WHERE " + idcolumnname + "=?", [value]);
-            //console.log("SELECT " + idcolumnname + " FROM " + table + " WHERE " + idcolumnname + "=" + value)
+                var rows = await (await this.db).query("SELECT " + idcolumnname + " FROM " + table + " WHERE " + idcolumnname + "=" + value);
 
-            if(!!rows) {
-            var result=rows.next();
-            if (result.done) { reject("No Id!") }
-            if (result.value && value == result.value[0]) { resolve(true); return; } else { reject(false); return; }
-            } else {
-                reject("Rows undefined")
+                resolve(rows.length == 1);
             }
-
         });
     }
 
-    checkTableExists(tablename: string): Promise<boolean> {
-        return new Promise((resolve, reject) => {
+    checkTableExists(tablename: string): Promise<void> {
+        return new Promise(async (resolve, reject) => {
+
             var sql =/*sql*/`SELECT name FROM sqlite_master WHERE type='table' AND name='${tablename}';`
 
-            var rows = this.dbcon?.query(sql, []);
+            var rows = await (await this.db).query(sql);
 
-            if (!!rows)
-                for (const values of rows) { if (values && tablename == values[0]) { resolve(true); return; } }
-
-            reject(false);
+            if (rows.length == 1) { resolve(); }
+            else { reject(); }
         });
     }
 }

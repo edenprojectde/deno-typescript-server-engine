@@ -1,7 +1,7 @@
 import { UUID } from "./id/UUID.ts";
 import Connection from "./sqllite/Connection.ts";
 import BaseField from "./sqllite/BaseField.ts";
-
+import { connect } from "https://deno.land/x/cotton/mod.ts";
 
 
 class LocalSession {
@@ -62,7 +62,8 @@ export class DBSession {
                 this.UUID = UUID.generate(256);
 
                 
-                await (await DBSession.con.db).execute("INSERT INTO session VALUES(?)", [this.UUID])
+                var db = await connect(DBSession.con.connectionobj)
+                db.execute("INSERT INTO session VALUES(?)", [this.UUID])
                 
             })
 

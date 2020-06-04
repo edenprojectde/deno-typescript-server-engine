@@ -7,7 +7,7 @@ Deno.test('Test', async () => {
   console.log("TEST")
   var ca = new Cacheable();
 
-  //await ca.cache(getFile,"GET",[],"");
+  await ca.cache(getFile,"GET",[],"");
 
   return;
 })

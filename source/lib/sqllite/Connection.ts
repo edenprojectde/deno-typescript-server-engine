@@ -1,27 +1,17 @@
 import { connect } from "https://deno.land/x/cotton/mod.ts";
-import { BaseAdapter } from "https://deno.land/x/cotton/src/baseadapter.ts";
 import { IField } from "./IField.ts";
 
 export default class Connection {
     //private _ba : BaseAdapter | undefined;
 
 
-    path: string;
+    connectionobj: any;
 
     constructor(path: string) {
-        console.log("Init")
-        this.path = Deno.cwd() + path;
-    }
-
-    get db(): Promise<BaseAdapter> {
-        return new Promise(async (resolve, reject) => {
-            var ba = await connect({
-                type: "sqlite",
-                database: this.path
-            })
-            //resolve(ba)
-            
-        });
+        this.connectionobj = {
+            type: "sqlite",
+            database: Deno.cwd() + path
+        };
     }
 
     createTable(name: string, fields: Array<IField>): Promise<void> {
@@ -32,16 +22,17 @@ export default class Connection {
                 tblstrings.push(val.name + " " + val.type + " " + (val.pk ? "PRIMARY KEY" : "") + " " + (val.unique ? "UNIQUE" : "") + " " + (val.ai ? "AUTOINCREMENT" : ""));
             });
 
-            (await this.db).execute("CREATE TABLE IF NOT EXISTS " + name + "(" + tblstrings.join(",") + ")");
-
+            var db = await connect(this.connectionobj)
+            await db.execute("CREATE TABLE IF NOT EXISTS " + name + "(" + tblstrings.join(",") + ")");
+            await db.disconnect();
             resolve();
         });
     }
     dropTable(name: string): Promise<void> {
         return new Promise(async (resolve, reject) => {
-
-            (await this.db).execute("DROP TABLE " + name);
-
+            var db = await connect(this.connectionobj)
+            await db.execute("DROP TABLE " + name);
+            await db.disconnect();
 
             resolve();
         });
@@ -56,23 +47,25 @@ export default class Connection {
         return new Promise(async (resolve, reject) => {
             if (!value) { reject('Undefined as Val is not valid'); }
             else {
-
-                var rows = await (await this.db).query("SELECT " + idcolumnname + " FROM " + table + " WHERE " + idcolumnname + "=" + value);
+                var db = await connect(this.connectionobj)
+                var rows = await db.query("SELECT " + idcolumnname + " FROM " + table + " WHERE " + idcolumnname + "='" + value+"'");
 
                 resolve(rows.length == 1);
+                await db.disconnect();
             }
         });
     }
 
     checkTableExists(tablename: string): Promise<void> {
         return new Promise(async (resolve, reject) => {
-
+            var db = await connect(this.connectionobj)
             var sql =/*sql*/`SELECT name FROM sqlite_master WHERE type='table' AND name='${tablename}';`
 
-            var rows = await (await this.db).query(sql);
+            var rows = await db.query(sql);
 
             if (rows.length == 1) { resolve(); }
             else { reject(); }
+            await db.disconnect();
         });
     }
 }

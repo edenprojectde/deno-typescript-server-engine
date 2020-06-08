@@ -12,6 +12,7 @@ export class SessionComponent extends BaseComponent {
 
     async body(args: RequestData): Promise<FileData> {
         return new Promise((resolve, reject) => {
+            
             this.log(args);
             resolve(new FileData().setContent(`
                 <div>${args.extra} : ${typeof(args)}</div>

@@ -7,9 +7,13 @@ import { existsSync } from "https://deno.land/std/fs/exists.ts";
 import { Model } from "https://deno.land/x/cotton/mod.ts";
 import { UUID } from "../id/UUID.ts";
 
-export default class Cacheable extends BaseDebugable {
-    CachePath: string = Deno.cwd() + "/data/cache/";
-    FlatCachePath: string = Deno.cwd() + "/data/fcache/";
+/*  TODO: Check full Database for files and delete files not in DB
+    TODO: Make tasks to redownload files automatically.
+*/
+
+export class Cache extends BaseDebugable {
+    static CachePath: string = Deno.cwd() + "/data/cache/";
+    static FlatCachePath: string = Deno.cwd() + "/data/fcache/";
     private static DBConnection = new Connection("/data/db.sqlite");
 
     constructor() {
@@ -20,53 +24,44 @@ export default class Cacheable extends BaseDebugable {
      * Will load a file into Cache.
      * @param url Data to cache!
      */
-    cache(url: string, method: string, headers: Array<string[]>, body: string): Promise<void> {
+    static storeFile(cachingrequest: CachingRequest): Promise<void> {
         return new Promise(async (resolve, reject) => {
-            await Cacheable.DBConnection.checkTableExists('cache')
+            await Cache.DBConnection.checkTableExists('cache')
                 .catch(() => {
-                    console.log("TABLE DOES NOT EXIST")
-                    Cacheable.DBConnection.createTable("cache", [
+                    //console.log("TABLE DOES NOT EXIST")
+                    Cache.DBConnection.createTable("cache", [
                         new BaseField('url').isUnique().setType("VARCHAR(2048)"),
                         new BaseField('validUntil').setType("UNSIGNED INTEGER(6)"),
                         new BaseField('localName').isUnique().setType("VARCHAR(256)"),
                     ]).then(() => {
-                        console.log("TABLE CREATED")
+                        //console.log("TABLE CREATED")
                     })
                 })
 
-            let db = await connect(Cacheable.DBConnection.connectionobj);
-
-
-            let sql = "SELECT validUntil FROM cache WHERE url='" + url + "'"
-
+            let db = await connect(Cache.DBConnection.connectionobj);
 
             let entry = await db.queryBuilder('cache')
                 .select()
-                .where('url', url)
+                .where('url', cachingrequest.url)
                 .limit(1)
                 .execute();
 
-            this.log(entry);
+            //this.log(entry);
 
             db.disconnect();
 
-            this.log( (existsSync(this.FlatCachePath+entry[0].localName)?"Datei existiert.. ":"Datei existiert nicht.. "+this.FlatCachePath+entry[0].localName) )
-            this.log( entry[0].validUntil+" ist GRÖßER als ");
-            this.log(Date.now()+": "+(entry[0].validUntil > Date.now()) )
-            this.log( existsSync(this.FlatCachePath+entry[0].localName) && (entry[0].validUntil > Date.now()) )
+            //this.log( (existsSync(this.FlatCachePath+entry[0].localName)?"Datei existiert.. ":"Datei existiert nicht.. "+this.FlatCachePath+entry[0].localName) )
+            //this.log( entry[0].validUntil+" ist GRÖßER als ");
+            //this.log(Date.now()+": "+(entry[0].validUntil > Date.now()) )
+            //this.log( existsSync(this.FlatCachePath+entry[0].localName) && (entry[0].validUntil > Date.now()) )
 
-            if (existsSync(this.FlatCachePath+entry[0].localName) && entry[0].validUntil > Date.now()) {
+            // If file exists AND is still valid just resolve().
+            if (!!entry && entry.length==1 && existsSync(this.FlatCachePath+entry[0].localName) && entry[0].validUntil > Date.now()) {
                 resolve();
             } else {
-                
-                //let dbobj = await (await Cacheable.DBConnection.db).query(sql);
-                //console.log(dbobj);
-
-                if (!method) method = "GET";
-                if (!headers) headers = [];
-                if (!body) body = "";
-
-                var pathWfilename = this.CachePath + url.replace('http://', '').replace('https://', '');
+                /* Generate needed variables */
+                /*                           */
+                var pathWfilename = this.CachePath + cachingrequest.url.replace('http://', '').replace('https://', '');
                 var splitPath = pathWfilename.split('/');
                 var fileName = splitPath.pop();
                 var fileExtension = ""
@@ -76,18 +71,20 @@ export default class Cacheable extends BaseDebugable {
                     if (fileNameSplit.length == 2)
                         fileExtension = "." + fileNameSplit[1];
                 }
-
+                /*                           */
+                /*****************************/
 
                 // Load cacheable file.
-                var response: Response = await fetch(new URL(url), {
-                    method: method,
-                    headers: headers,
-                    body: body
+                var response: Response = await fetch(new URL(cachingrequest.url), {
+                    method: cachingrequest.method,
+                    headers: cachingrequest.headers,
+                    body: cachingrequest.body
                 });
                 const decoder = new TextDecoder('utf-8');
                 const bodyContent = decoder.decode(new Uint8Array(await response.arrayBuffer()));
 
-                //console.log(response.headers.get('content-type'))
+                // Maybe needed in the future:
+                // console.log(response.headers.get('content-type'))
 
                 // Save cacheable file.
                 ensureDirSync(splitPath.join('/'));
@@ -96,6 +93,10 @@ export default class Cacheable extends BaseDebugable {
                 var flatFileName = UUID.generate(5) + fileExtension;
                 Deno.writeTextFileSync(this.FlatCachePath + flatFileName, bodyContent);
 
+                if(!!entry && entry.length==1 && !!entry[0].localName && existsSync(Cache.FlatCachePath+entry[0].localName)){
+                    Deno.removeSync(this.FlatCachePath+entry[0].localName);
+                }
+
                 if (response.ok) {
                     var cachecontrol = response.headers.get('cache-control')
                     if (!!cachecontrol) {
@@ -103,9 +104,9 @@ export default class Cacheable extends BaseDebugable {
                             var split = v.split('=');
                             return split;
                         }).filter((v) => v[0] == "max-age")[0][1]
-                        let db = await connect(Cacheable.DBConnection.connectionobj);
+                        let db = await connect(Cache.DBConnection.connectionobj);
                         db.execute(`REPLACE INTO cache(url, validUntil, localName)
-                                        VALUES('`+ url + `','` + (Date.now() + (Number(validUntilMoreFor)*1000)) + `','${flatFileName}')`)
+                                        VALUES('`+ cachingrequest.url + `','` + (Date.now() + (Number(validUntilMoreFor)*1000)) + `','${flatFileName}')`)
                         await db.disconnect();
                     }
                     resolve();
@@ -120,8 +121,53 @@ export default class Cacheable extends BaseDebugable {
      * You can retrieve the Contents from a file you previously cached with this method.
      * @param url 
      */
-    getContent(url: string): string | object {
-        return "Empty";
+    static async getContent(url: string): Promise<string> {
+        return new Promise(async (resolve,reject)=>{
+            let db = await connect(Cache.DBConnection.connectionobj);
+
+            
+
+            let entry = await db.queryBuilder('cache')
+                .select()
+                .where('url', url)
+                .limit(1)
+                .execute();
+            
+            db.disconnect();
+
+            resolve(Deno.readTextFileSync(Cache.FlatCachePath+entry[0].localName));
+        })
+    }
+
+    static async getContentAsObj(url: string): Promise<string | object> {
+        return new Promise(async (resolve,reject)=>{
+            let db = await connect(Cache.DBConnection.connectionobj);
+
+            let entry = await db.queryBuilder('cache')
+                .select()
+                .where('url', url)
+                .limit(1)
+                .execute();
+            
+            db.disconnect();
+
+            resolve(JSON.parse(Deno.readTextFileSync(Cache.FlatCachePath+entry[0].localName)));
+        })
+    }
+    static async getContentAsInterfaced<T>(url: string): Promise<T> {
+        return new Promise(async (resolve,reject)=>{
+            let db = await connect(Cache.DBConnection.connectionobj);
+
+            let entry = await db.queryBuilder('cache')
+                .select()
+                .where('url', url)
+                .limit(1)
+                .execute();
+            
+            db.disconnect();
+
+            resolve(JSON.parse(Deno.readTextFileSync(Cache.FlatCachePath+entry[0].localName)) as T);
+        })
     }
 }
 
@@ -136,4 +182,32 @@ export class CachedFile extends Model {
     validUntil!: Date;
     url!: string;
     localName!: string;
+}
+
+export class CachingRequest {
+    url: string
+    method: string = "GET"
+    headers: Array<string[]> = []
+    body: string = ""
+
+    constructor(url: string){
+        this.url=url;
+    }
+    
+    setMethod(method: Method | string) {
+        this.method=method;
+        return this;
+    }
+    addHeader(name: string, value:string) {
+        this.headers.push([name,value]);
+        return this;
+    }
+    setBody(body: string) {
+        this.body = body;
+        return this;
+    }
+}
+export enum Method {
+    GET="GET",
+    POST="POST"
 }

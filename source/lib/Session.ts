@@ -1,78 +1,74 @@
 import { UUID } from "./id/UUID.ts";
 import Connection from "./sqllite/Connection.ts";
 import BaseField from "./sqllite/BaseField.ts";
-import { connect } from "https://deno.land/x/cotton/mod.ts";
+import { connect } from "https://raw.githubusercontent.com/rahmanfadhil/cotton/master/mod.ts";
 
 
-class LocalSession {
-    private static AllSessionStorages: Record<string, SessionStorage> = {};
-    SessionStorage: SessionStorage = new SessionStorage("");
+export class DBSession {
     UUID: string = "NOID";
-    private static con = new Connection("/data/db.sqlite");
+    private uncheckedUUID : string | undefined = "";
+    private static con : Connection;
 
     constructor(proclaimedSessionID: string | undefined) {
-        LocalSession.con.checkTableExists('session').catch(() => {
-            LocalSession.con.createTable("session", [new BaseField('ESSID').isPrimary().setType("VARCHAR(128)")])
-        }).finally(() => {
-            if (!!proclaimedSessionID) {
-                if (!!LocalSession.AllSessionStorages[proclaimedSessionID]) {
-                    this.SessionStorage = LocalSession.AllSessionStorages[proclaimedSessionID];
-                    this.UUID = proclaimedSessionID;
-                    //console.log("Loaded existing S")
-                } else {
-                    // TODO: Create new Session into SQL Database
-                    this.SessionStorage = new SessionStorage("");
-                    this.UUID = UUID.generate(128);
-                    LocalSession.AllSessionStorages[this.UUID] = this.SessionStorage;
-                    //console.log("Created S")
-                }
-            }
-        });
-    }
-
-    store(name: string, data: string) {
-
-    }
-    getID(): string {
-        return this.UUID;
-    }
-
-    private checkIfIdExists(id: string): boolean {
-        return true;
-    }
-}
-export class DBSession {
-    private static AllSessionStorages: Record<string, SessionStorage> = {};
-    SessionStorage: SessionStorage = new SessionStorage("");
-    UUID: string = "NOID";
-    private static con = new Connection("/data/db.sqlite");
-
-    constructor(proclaimedSessionID: string|undefined) {
+        this.uncheckedUUID=proclaimedSessionID;
         DBSession.con.checkTableExists('session').catch(() => {
-            DBSession.con.createTable("session", [new BaseField('essid').isUnique().setType("VARCHAR(256)")])
-        }).finally(() => {
+            DBSession.con.createTable("session", [
+                new BaseField('essid').isUnique().setType("VARCHAR(256)"),
+                new BaseField('created_at').setType('BIGNUMBER')
+            ])
+        }).then(() => {
+            DBSession.con.checkTableExists('session_data').catch(() => {
+                DBSession.con.createTable("session_data", [
+                    new BaseField('essid').isUnique().setType("VARCHAR(256)"),
+                    new BaseField('data').isUnique().setType("VARCHAR(15)")
+                ])
+            })
+        })
+    }
 
+    openSession(): Promise<DBSessionStorage> {
+        return new Promise((resolve) => {
             //console.log("Check ID Exists")
-            this.checkIfIdExists(proclaimedSessionID).then(() => {
+            this.checkIfIdExists(this.uncheckedUUID).then(() => {
                 //console.log("Found ID in DB!")
-                this.UUID = proclaimedSessionID as string;
-            }).catch(async(reason) => {
+                this.UUID = this.uncheckedUUID as string;
+                resolve();
+            }).catch(async (reason) => {
                 console.log("Reason: " + reason)
 
                 this.UUID = UUID.generate(256);
 
-                
                 var db = await connect(DBSession.con.connectionobj)
-                db.execute("INSERT INTO session VALUES(?)", [this.UUID])
-                
+                db.queryBuilder('session')
+                    .replace({essid:this.UUID, created_at:Date.now()})
+                    .execute();
+                db.disconnect();
+                resolve(new DBSessionStorage(this.UUID));
             })
-
-        });
+            
+        })
     }
 
-    store(name: string, data: string) {
+    
 
+    /**
+     * Fully removes the Session from the Database!!
+     */
+    async deleteSession() {
+        var db = await connect(DBSession.con.connectionobj)
+
+        await db.queryBuilder('session')
+            .where("essid", this.UUID)
+            .delete()
+            .execute();
+        await db.queryBuilder('session_data')
+            .where("essid", this.UUID)
+            .delete()
+            .execute();
+
+        await db.disconnect();
     }
+
     getID(): string {
         return this.UUID;
     }
@@ -82,32 +78,26 @@ export class DBSession {
     }
 }
 
-export class SessionStorage {
-    Data: Array<BasicSessionDataPair<string>> = [];
+export class DBSessionStorage {
+    UUID: string;
+    private static con : Connection;
 
-    LData: any = {};
-
-    constructor(id: string) {
-
+    constructor(uuid: string) {
+        this.UUID = uuid;
     }
 
-    getData(name: string) {
-        return this.LData[name];
-    }
+    /**
+     * Store the Session Data into DB(JSON as text for example)
+     * @param data Data to store into DB
+     */
+    async store(data: string) {
+        var db = await connect(DBSessionStorage.con.connectionobj)
 
-    setData(name: string, value: string) {
-        this.LData[name] = value;
-    }
+        db.queryBuilder('session_data')
+            .replace({ essid: this.UUID, data: data })
+            .execute();
 
-    static Load(id: string): SessionStorage {
-        // Session Data should be loaded here!
-        var retval = new SessionStorage(id);
-
-        // TODO: Load MySQL Data
-
-        // TODO: Load Cached Data
-
-        return retval;
+        db.disconnect();
     }
 }
 

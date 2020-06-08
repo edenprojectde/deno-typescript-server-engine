@@ -17,13 +17,13 @@ export class EditorComponent extends BaseComponent {
     // TODO: Make SQL Databinding directives.
     // TODO: Make a cache to not load everything a million times over ya dork.
     async body(args: RequestData): Promise<FileData> {
-        return new Promise((resolve, reject) => {
+        return new Promise(async (resolve, reject) => {
 
 
             resolve(new FileData().setContent(`
                 <div id="editorjs"></div>
                 <div class="customCss">CustomCss!</div>
-            `+DebugComponent.asSubComponent(args).content));
+            `+((await DebugComponent.asSubComponent(args)).content)));
         });
     }
     ressources() : Promise<RessourceCollection> {

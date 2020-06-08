@@ -50,7 +50,13 @@ export default class Connection {
                 var db = await connect(this.connectionobj)
                 var rows = await db.query("SELECT " + idcolumnname + " FROM " + table + " WHERE " + idcolumnname + "='" + value+"'");
 
-                resolve(rows.length == 1);
+
+                console.log(rows);
+                if(rows.length==1)
+                    resolve(rows.length == 1);
+                else if (rows.length==0){
+                    reject("No entry with this Id")
+                } else { reject ("Too many IDs"); }
                 await db.disconnect();
             }
         });

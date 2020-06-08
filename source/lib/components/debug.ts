@@ -15,20 +15,23 @@ export class DebugComponent extends BaseComponent {
         })
     }
 
-    static asSubComponent(args: RequestData): FileData {
-        var allHeaders = "";
+    static asSubComponent(args: RequestData): Promise<FileData> {
+        return new Promise((resolve)=>{
+            var allHeaders = "";
 
-        for (let entry of args.rawheaders) {
-            allHeaders+=entry[0]+" : "+entry[1]+"<br>"
-        }
-
-        args.session?.SessionStorage.setData("DEBUG TEST","SUCCESSSU")
-
-        return new FileData()
+            for (let entry of args.rawheaders) {
+                allHeaders+=entry[0]+" : "+entry[1]+"<br>"
+            }
+    
+            args.session?.openSession().then((sesStore)=>{
+                resolve(new FileData()
                     .setContent(/*html*/`
                         <div>Headers:<br>${allHeaders}</div>
-                        <div>${JSON.stringify(args.session?.SessionStorage.LData)}</div>
+                        <div></div>
                     
-                    `);
+                    `));
+            })
+        })
+        
     }
 }

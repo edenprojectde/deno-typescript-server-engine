@@ -12,6 +12,7 @@ What you get into your Body and Components:
 - [X] Load scripts external or internal, and 
 - [ ] cache them if needed! (1/2 done)
 - [ ] Premate Components to just copy in! [Blog Page, Google Login, Editor, ...]
+- [ ] Parse content *.pug and handlebars/mustache Templates
 - [X] Static File Directory!
 
 ## The Idea

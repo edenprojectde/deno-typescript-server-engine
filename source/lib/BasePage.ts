@@ -1,5 +1,5 @@
 import { BaseDebugable } from "./BaseDebugable.ts";
-import { getCurrentScriptname } from "./helper/script.ts";
+import { getCurrentScriptname } from "./helper/path.ts";
 import { FileData } from "./io/file.ts";
 import { IComponent } from "./IComponent.ts";
 import { RessourceCollection, Position } from "./io/ressource.ts";

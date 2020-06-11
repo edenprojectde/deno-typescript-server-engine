@@ -1,5 +1,5 @@
 import { BaseComponent } from "../../lib/BaseComponent.ts";
-import { getCurrentScriptname, getPathOnly } from "../../lib/helper/script.ts";
+import { getCurrentScriptname, getPathOnly } from "../../lib/helper/path.ts";
 import { FileData } from "../../lib/io/file.ts";
 import RequestData from "../../lib/RequestData.ts";
 

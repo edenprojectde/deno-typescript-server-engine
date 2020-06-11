@@ -3,7 +3,7 @@ import { ServerRequest } from "https://deno.land/std@0.50.0/http/server.ts";
 
 import { BaseComponent } from "../../lib/BaseComponent.ts";
 import html from '../../lib/helper/html.ts'
-import { getCurrentScriptname, getFilename, getPathOnly } from "../../lib/helper/script.ts";
+import { getCurrentScriptname, getFilename, getPathOnly } from "../../lib/helper/path.ts";
 import { MimeChecker } from '../helper/mime.ts';
 import { FileData } from '../io/file.ts';
 import RequestData from '../RequestData.ts';

@@ -3,7 +3,7 @@ import { ServerRequest } from "https://deno.land/std@0.50.0/http/server.ts";
 import { IComponent } from "./IComponent.ts";
 import { IRessource, RessourceCollection } from "./io/ressource.ts";
 import { UUID } from "./id/UUID.ts";
-import { getCurrentScriptname, getPathOnly } from "./helper/script.ts";
+import { getCurrentScriptname, getPathOnly } from "./helper/path.ts";
 import { BaseDebugable } from './BaseDebugable.ts';
 import { FileData } from './io/file.ts';
 import RequestData from './RequestData.ts';

@@ -33,4 +33,4 @@ jobs:
         deno-version: v1.0.5
         
     - name: Test all Deno tests
-      run: deno test
+      run: deno test --allow-all

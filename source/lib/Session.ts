@@ -7,7 +7,7 @@ import { connect } from "https://raw.githubusercontent.com/rahmanfadhil/cotton/m
 export class DBSession {
     UUID: string = "NOID";
     private uncheckedUUID : string | undefined = "";
-    private static con : Connection;
+    static con : Connection;
 
     constructor(proclaimedSessionID: string | undefined) {
         this.uncheckedUUID=proclaimedSessionID;
@@ -109,7 +109,7 @@ export class DBSessionStorage {
      * @param data Data to store into DB
      */
     async store(data: string) {
-        var db = await connect(DBSessionStorage.con.connectionobj)
+        var db = await connect(DBSession.con.connectionobj)
 
         db.queryBuilder('session_data')
             .replace({ essid: this.UUID, data: data })

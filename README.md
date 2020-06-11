@@ -1,6 +1,6 @@
 ![CI](https://github.com/edenprojectde/deno-typescript-server-engine/workflows/CI/badge.svg)
 
-# DTSE [Strongly WIP]
+# DTSE [Extremly Strongly WIP]
 
 A fully OOM to handle Pages in Deno! With automatic parsing of GET & POST, autocreating a Session to store data in. Tested and Typed!
 
@@ -87,3 +87,5 @@ export class EditorComponent extends BaseComponent {
     }
 }
 ```
+
+The Page only needs to be registred into the main.ts! Which will soon be a little bit nicer.

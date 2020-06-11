@@ -1,7 +1,7 @@
 import { BaseDebugable } from "../BaseDebugable.ts";
 import BaseField from "../sqllite/BaseField.ts";
 import Connection from "../sqllite/Connection.ts";
-import { connect } from "https://deno.land/x/cotton/mod.ts";
+import { connect } from "https://raw.githubusercontent.com/rahmanfadhil/cotton/master/mod.ts";
 import { ensureDirSync } from "https://deno.land/std/fs/ensure_dir.ts";
 import { existsSync } from "https://deno.land/std/fs/exists.ts";
 import { Model } from "https://deno.land/x/cotton/mod.ts";
@@ -56,7 +56,7 @@ export class Cache extends BaseDebugable {
             //this.log( existsSync(this.FlatCachePath+entry[0].localName) && (entry[0].validUntil > Date.now()) )
 
             // If file exists AND is still valid just resolve().
-            if (!!entry && entry.length==1 && existsSync(this.FlatCachePath+entry[0].localName) && entry[0].validUntil > Date.now()) {
+            if (!!entry && entry.records.length==1 && existsSync(this.FlatCachePath+entry.records[0].localName) && entry.records[0].validUntil > Date.now()) {
                 resolve();
             } else {
                 /* Generate needed variables */
@@ -93,8 +93,8 @@ export class Cache extends BaseDebugable {
                 var flatFileName = UUID.generate(5) + fileExtension;
                 Deno.writeTextFileSync(this.FlatCachePath + flatFileName, bodyContent);
 
-                if(!!entry && entry.length==1 && !!entry[0].localName && existsSync(Cache.FlatCachePath+entry[0].localName)){
-                    Deno.removeSync(this.FlatCachePath+entry[0].localName);
+                if(!!entry && entry.records.length==1 && !!entry.records[0].localName && existsSync(Cache.FlatCachePath+entry.records[0].localName)){
+                    Deno.removeSync(this.FlatCachePath+entry.records[0].localName);
                 }
 
                 if (response.ok) {
@@ -135,7 +135,7 @@ export class Cache extends BaseDebugable {
             
             db.disconnect();
 
-            resolve(Deno.readTextFileSync(Cache.FlatCachePath+entry[0].localName));
+            resolve(Deno.readTextFileSync(Cache.FlatCachePath+entry.records[0].localName));
         })
     }
 
@@ -151,7 +151,7 @@ export class Cache extends BaseDebugable {
             
             db.disconnect();
 
-            resolve(JSON.parse(Deno.readTextFileSync(Cache.FlatCachePath+entry[0].localName)));
+            resolve(JSON.parse(Deno.readTextFileSync(Cache.FlatCachePath+entry.records[0].localName)));
         })
     }
     static async getContentAsInterfaced<T>(url: string): Promise<T> {
@@ -166,7 +166,7 @@ export class Cache extends BaseDebugable {
             
             db.disconnect();
 
-            resolve(JSON.parse(Deno.readTextFileSync(Cache.FlatCachePath+entry[0].localName)) as T);
+            resolve(JSON.parse(Deno.readTextFileSync(Cache.FlatCachePath+entry.records[0].localName)) as T);
         })
     }
 }

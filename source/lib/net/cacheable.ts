@@ -4,7 +4,6 @@ import Connection from "../sqllite/Connection.ts";
 import { connect } from "https://raw.githubusercontent.com/rahmanfadhil/cotton/master/mod.ts";
 import { ensureDirSync } from "https://deno.land/std/fs/ensure_dir.ts";
 import { existsSync } from "https://deno.land/std/fs/exists.ts";
-import { Model } from "https://deno.land/x/cotton/mod.ts";
 import { UUID } from "../id/UUID.ts";
 
 /*  TODO: Check full Database for files and delete files not in DB

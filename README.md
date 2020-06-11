@@ -15,11 +15,11 @@ What you get into your Body and Components:
 
 ## The Idea
 
-We use Site-Objects (which have access rights, a route etc.) which can then load Components which have all the things available a site needs. (as listed above: Session, GET, POST, functions to load in files or let them be loaded dynamically)
+We use Page-Objects (which have access rights, a route etc.) which can then load Components which have all the things available a site needs. (as listed above: Session, GET, POST, functions to load in files or let them be loaded dynamically)
 
 Example:
 ```ts
-class BlogPage implements BaseSite {
+class BlogPage implements BasePage {
   matchingPathCheck(path: string): boolean {
       return path.startsWith("/blog");
   }

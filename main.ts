@@ -1,26 +1,17 @@
 import { serve } from "https://deno.land/std@0.50.0/http/server.ts";
 
-import { Index } from "./source/sites/index.ts";
-import { BlogPage } from "./source/sites/blog.ts";
-import { EditorPage } from "./source/sites/editor.ts";
-import { SessionPage } from "./source/sites/session.ts";
 import { BasePage } from "./source/lib/BasePage.ts";
 import { StaticComponent } from "./source/lib/components/404.ts";
 import RequestData from "./source/lib/RequestData.ts";
 import Cookies from "./source/lib/Cookies.ts";
 import Methods from "./source/lib/helper/method.ts";
-import { LoginPage } from "./source/sites/login.ts";
 import { Session } from "./source/lib/Session.ts";
 
 const s = serve({ port: 8000 });
 console.log("http://localhost:8000/");
 
-var registeredPages = [
-  new Index(),
-  new BlogPage(),
-  new EditorPage(),
-  new SessionPage(),
-  new LoginPage()
+var registeredPages: BasePage[] = [
+
 ]
 
 // Der StaticHandler sorgt dafür das statische Daten geladen werden & falls nichts gefunden wird eine 404 Seite angezeigt wird.

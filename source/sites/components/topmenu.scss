@@ -1,9 +1,0 @@
-.horizontal {
-    display:flex;
-    flex-direction: row;
-    flex-wrap: nowrap;
-    > a {
-        flex:1;
-        border:1px solid black;
-    }
-}

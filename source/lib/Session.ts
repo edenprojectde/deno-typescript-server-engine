@@ -74,12 +74,23 @@ export class DBSession {
 
         await db.queryBuilder('session')
             .where("essid", this.UUID)
-            .delete()
-            .execute();
+            .execute().then(async qr=>{
+                if(qr.records.length>=1)
+                await db.queryBuilder('session')
+                    .where("essid", this.UUID)
+                    .delete()
+                    .execute();
+            });
+
         await db.queryBuilder('session_data')
             .where("essid", this.UUID)
-            .delete()
-            .execute();
+            .execute().then(async qr=>{
+                if(qr.records.length>=1)
+                await db.queryBuilder('session_data')
+                    .where("essid", this.UUID)
+                    .delete()
+                    .execute();
+            });
 
         await db.disconnect();
     }

@@ -62,9 +62,9 @@ for await (const req of s) {
   var page: undefined | BasePage = registeredPages.find((el) => el.matchingPathCheck(req.url)) //Finde Seite die matcht
   page?.body(new RequestData(req.url,undefined,session,CookieHeaderObj,postdata,req.headers)) //Generiere Body
     .then(
-      (pageanswer) => { 
+      async (pageanswer) => { 
 
-        pageanswer.header.set('SET-COOKIE',"ESESSID="+session.getID());
+        pageanswer.header.set('SET-COOKIE',"ESESSID="+(await session.getID()));
 
         req.respond({ body: pageanswer.content, headers: pageanswer.header}); 
         //console.timeEnd('PageCall of '+req.url);
@@ -73,14 +73,14 @@ for await (const req of s) {
 
   // Falls keine Seite gefunden wurde
   if (page == undefined) {
-    StaticHandler.body(new RequestData(req.url,undefined,session,CookieHeaderObj,postdata,req.headers)).then((resolved) => {
+    StaticHandler.body(new RequestData(req.url,undefined,session,CookieHeaderObj,postdata,req.headers)).then(async (resolved) => {
       if(typeof(resolved) == "string")
       { req.respond({ body: resolved }); console.timeEnd('PageCall of '+req.url); }
       else{
         var headers = new Headers();
         if(!!resolved.mime) headers.set('Content-Type',resolved.mime);
 
-        headers.set('SET-COOKIE',"ESESSID="+session.getID());
+        headers.set('SET-COOKIE',"ESESSID="+(await session.getID()));
         req.respond({ body: resolved.content, headers: headers})
 
         //console.timeEnd('PageCall of '+req.url);

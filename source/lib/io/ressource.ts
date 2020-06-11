@@ -86,6 +86,26 @@ export class Meta {
         throw new Error("Position can not be set on Meta Ressources!");
     }
 }
+export class Link implements IRessource{
+    private Position:Position=Position.Head;
+    private Rel: string;
+    private Href: string;
+
+    constructor(href: string, rel: string) {
+        this.Href=href;
+        this.Rel = rel;
+    }
+
+    getHTML(): string{
+        return `<link href="${this.Href}" rel="${this.Rel}" >`;
+    }
+    getPosition() : Position {
+        return this.Position;
+    }
+    setPosition(position:Position) : Script{
+        throw new Error("Position can not be set on Link Ressources!");
+    }
+}
 export class Style {}
 
 export class RessourceCollection {

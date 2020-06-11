@@ -51,7 +51,7 @@ export default class Connection {
                 var rows = await db.query("SELECT " + idcolumnname + " FROM " + table + " WHERE " + idcolumnname + "='" + value+"'");
 
 
-                console.log(rows);
+                //console.log(rows);
                 if(rows.length==1)
                     resolve(rows.length == 1);
                 else if (rows.length==0){

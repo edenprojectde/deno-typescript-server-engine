@@ -11,6 +11,46 @@ export class DBSession {
 
     constructor(proclaimedSessionID: string | undefined) {
         this.uncheckedUUID=proclaimedSessionID;
+
+        DBSession.con = new Connection('/data/db.sqlite');
+        this.installDB();
+
+        this.checkUUID();
+    }
+
+    private UUIDchecked=false;
+    private checkUUID(): Promise<void> {
+        return new Promise((resolve) => {
+            if(this.UUIDchecked) resolve();
+            //console.log("Check ID Exists")
+            this.checkIfIdExists(this.uncheckedUUID).then(() => {
+                //console.log("Found ID in DB!")
+                this.UUID = this.uncheckedUUID as string;
+                this.UUIDchecked=true;
+                resolve();
+            }).catch(async (reason) => {
+                console.log("Reason: " + reason)
+
+                this.UUID = UUID.generate(256);
+
+                var db = await connect(DBSession.con.connectionobj)
+                db.queryBuilder('session')
+                    .replace({essid:this.UUID, created_at:Date.now()})
+                    .execute();
+                db.disconnect();
+                this.UUIDchecked=true;
+                resolve();
+            })
+        })
+    }
+
+    openSession(): Promise<DBSessionStorage> {
+        return new Promise((resolve) => {
+            resolve(new DBSessionStorage(this.UUID));
+        });
+    }
+
+    private installDB() {
         DBSession.con.checkTableExists('session').catch(() => {
             DBSession.con.createTable("session", [
                 new BaseField('essid').isUnique().setType("VARCHAR(256)"),
@@ -25,31 +65,6 @@ export class DBSession {
             })
         })
     }
-
-    openSession(): Promise<DBSessionStorage> {
-        return new Promise((resolve) => {
-            //console.log("Check ID Exists")
-            this.checkIfIdExists(this.uncheckedUUID).then(() => {
-                //console.log("Found ID in DB!")
-                this.UUID = this.uncheckedUUID as string;
-                resolve();
-            }).catch(async (reason) => {
-                console.log("Reason: " + reason)
-
-                this.UUID = UUID.generate(256);
-
-                var db = await connect(DBSession.con.connectionobj)
-                db.queryBuilder('session')
-                    .replace({essid:this.UUID, created_at:Date.now()})
-                    .execute();
-                db.disconnect();
-                resolve(new DBSessionStorage(this.UUID));
-            })
-            
-        })
-    }
-
-    
 
     /**
      * Fully removes the Session from the Database!!
@@ -69,8 +84,11 @@ export class DBSession {
         await db.disconnect();
     }
 
-    getID(): string {
-        return this.UUID;
+    async getID(): Promise<string> {
+        return new Promise(async (resolve)=>{
+            await this.checkUUID();
+            resolve(this.UUID);
+        });
     }
 
     private checkIfIdExists(id: string | undefined): Promise<boolean> {
@@ -98,6 +116,21 @@ export class DBSessionStorage {
             .execute();
 
         db.disconnect();
+    }
+
+    async retrieve() : Promise<object> {
+        return new Promise(async (resolve)=>{
+            var db = await connect(DBSessionStorage.con.connectionobj)
+
+            var result = await db.queryBuilder('session_data')
+                .select('data')
+                .where("essid", this.UUID)
+                .execute();
+    
+            await db.disconnect();
+
+            resolve(result)
+        })
     }
 }
 

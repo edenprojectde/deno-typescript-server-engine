@@ -1,5 +1,7 @@
 import { connect } from "https://raw.githubusercontent.com/rahmanfadhil/cotton/master/mod.ts";
 import { IField } from "./IField.ts";
+import { ensureDirSync } from "https://deno.land/std/fs/ensure_dir.ts";
+import { getPathOnly } from "../helper/path.ts";
 
 export default class Connection {
     //private _ba : BaseAdapter | undefined;
@@ -8,6 +10,7 @@ export default class Connection {
     connectionobj: any;
 
     constructor(path: string) {
+        ensureDirSync(getPathOnly(Deno.cwd() + path));
         this.connectionobj = {
             type: "sqlite",
             database: Deno.cwd() + path

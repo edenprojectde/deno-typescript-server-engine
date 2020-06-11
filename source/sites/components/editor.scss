@@ -1,0 +1,45 @@
+* {
+    box-sizing: border-box;
+    font-family: 'Open Sans', sans-serif;
+}
+
+.editor-wrapper {
+    border: 1px solid black;
+    box-shadow: 3px 3px 5px grey;
+    min-width:640px;
+    width:760px;
+    margin: 50px auto;
+}
+
+.cdx-block {
+    background-color:white;
+}
+
+#debug {
+    color:rgb(148, 91, 91);
+    background-color:rgb(212, 107, 107);
+}
+
+.blog-wrapper {
+    min-width:640px;
+    width:760px;
+    margin: 50px auto;
+    border: 1px solid rgba(132, 132, 132, 0.322);
+    border-radius: 5px;
+    box-shadow: 3px 3px 5px grey;
+}
+
+.warning-head {
+    font-size:1.7em;
+    color: #191412;
+    margin:0.5% 2%;
+}
+.warning-body {
+    margin:0.5% 2%;
+}
+.warning {
+    padding:10px;
+    color:rgb(148, 91, 91);
+    background-color:rgb(212, 107, 107);
+    border-radius: 5px;
+}

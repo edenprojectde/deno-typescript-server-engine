@@ -1,4 +1,4 @@
-import { connect } from "https://deno.land/x/cotton/mod.ts";
+import { connect } from "https://raw.githubusercontent.com/rahmanfadhil/cotton/master/mod.ts";
 import { IField } from "./IField.ts";
 
 export default class Connection {
@@ -52,9 +52,9 @@ export default class Connection {
 
 
                 //console.log(rows);
-                if(rows.length==1)
-                    resolve(rows.length == 1);
-                else if (rows.length==0){
+                if(rows.records.length==1)
+                    resolve(rows.records.length == 1);
+                else if (rows.records.length==0){
                     reject("No entry with this Id")
                 } else { reject ("Too many IDs"); }
                 await db.disconnect();
@@ -69,7 +69,7 @@ export default class Connection {
 
             var rows = await db.query(sql);
 
-            if (rows.length == 1) { resolve(); }
+            if (rows.records.length == 1) { resolve(); }
             else { reject(); }
             await db.disconnect();
         });

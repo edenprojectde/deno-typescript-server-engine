@@ -171,18 +171,7 @@ export class Cache extends BaseDebugable {
     }
 }
 
-export class CachedFile extends Model {
-    static tableName = "cachedfiles";
-    static fields = {
-        url: String,
-        localName: String,
-        validUntil: Date,
-    };
 
-    validUntil!: Date;
-    url!: string;
-    localName!: string;
-}
 
 export class CachingRequest {
     url: string

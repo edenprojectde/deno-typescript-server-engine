@@ -6,102 +6,108 @@ import { connect } from "https://raw.githubusercontent.com/rahmanfadhil/cotton/m
 
 export class DBSession {
     UUID: string = "NOID";
-    private uncheckedUUID : string | undefined = "";
-    static con : Connection;
+    private uncheckedUUID: string | undefined = "";
+    static con: Connection;
 
     constructor(proclaimedSessionID: string | undefined) {
-        this.uncheckedUUID=proclaimedSessionID;
+        this.uncheckedUUID = proclaimedSessionID;
 
         DBSession.con = new Connection('/data/db.sqlite');
-        this.installDB();
-
-        this.checkUUID();
+        this.installDB().then(() => {
+            this.checkUUID();
+        });
     }
 
-    private UUIDchecked=false;
+    private UUIDchecked = false;
     /**
      * Checks if UUID is valid and initializing is done.
      */
     private checkUUID(): Promise<void> {
         return new Promise((resolve) => {
-            if(this.UUIDchecked) resolve();
-            //console.log("Check ID Exists")
-            this.checkIfIdExists(this.uncheckedUUID).then(() => {
-                //console.log("Found ID in DB!")
-                this.UUID = this.uncheckedUUID as string;
-                this.UUIDchecked=true;
-                resolve();
-            }).catch(async (reason) => {
-                console.log("Reason: " + reason)
+            if (this.UUIDchecked) resolve();
+            this.installDB().then(async () => {
+                //console.log("Check ID Exists")
+                this.checkIfIdExists(this.uncheckedUUID).then(() => {
+                    //console.log("Found ID in DB!")
+                    this.UUID = this.uncheckedUUID as string;
+                    this.UUIDchecked = true;
+                    resolve();
+                }).catch(async (reason) => {
+                    console.log("Reason: " + reason)
 
-                this.UUID = UUID.generate(256);
+                    this.UUID = UUID.generate(256);
 
-                var db = await connect(DBSession.con.connectionobj)
-                db.queryBuilder('session')
-                    .replace({essid:this.UUID, created_at:Date.now()})
-                    .execute();
-                db.disconnect();
-                this.UUIDchecked=true;
-                resolve();
-            })
+                    var db = await connect(DBSession.con.connectionobj)
+                    db.queryBuilder('session')
+                        .replace({ essid: this.UUID, created_at: Date.now() })
+                        .execute();
+                    db.disconnect();
+                    this.UUIDchecked = true;
+                    resolve();
+                })
+            });
         })
     }
 
     openSession(): Promise<DBSessionStorage> {
         return new Promise((resolve) => {
-            resolve(new DBSessionStorage(this.UUID));
+            resolve(new DBSessionStorage(this));
         });
     }
 
-    private installDB() {
-        DBSession.con.checkTableExists('session').catch(() => {
-            DBSession.con.createTable("session", [
-                new BaseField('essid').isUnique().setType("VARCHAR(256)"),
-                new BaseField('created_at').setType('BIGNUMBER')
-            ])
-        }).then(() => {
+    private isInstalled = false;
+    public async installDB(): Promise<boolean> {
+        return new Promise((resolve, reject) => {
+            if (this.isInstalled) { resolve(true); return; }
+            DBSession.con.checkTableExists('session').catch(async () => {
+                DBSession.con.createTable("session", [
+                    new BaseField('essid').isUnique().setType("VARCHAR(256)"),
+                    new BaseField('created_at').setType('BIGNUMBER')
+                ])
+            })
             DBSession.con.checkTableExists('session_data').catch(() => {
                 DBSession.con.createTable("session_data", [
                     new BaseField('essid').isUnique().setType("VARCHAR(256)"),
                     new BaseField('data').isUnique().setType("VARCHAR(1524)")
                 ])
             })
-        })
+            resolve(true);
+        });
     }
 
     /**
      * Fully removes the Session from the Database!!
      */
     async deleteSession() {
-        await this.checkUUID();
+        this.installDB().then(async () => {
+            var db = await connect(DBSession.con.connectionobj)
 
-        var db = await connect(DBSession.con.connectionobj)
+            await db.queryBuilder('session')
+                .where("essid", this.UUID)
+                .execute().then(async qr => {
+                    if (qr.records.length >= 1)
+                        await db.queryBuilder('session')
+                            .where("essid", this.UUID)
+                            .delete()
+                            .execute();
+                });
 
-        await db.queryBuilder('session')
-            .where("essid", this.UUID)
-            .execute().then(async qr=>{
-                if(qr.records.length>=1)
-                await db.queryBuilder('session')
-                    .where("essid", this.UUID)
-                    .delete()
-                    .execute();
-            });
+            await db.queryBuilder('session_data')
+                .where("essid", this.UUID)
+                .execute().then(async qr => {
+                    if (qr.records.length >= 1)
+                        await db.queryBuilder('session_data')
+                            .where("essid", this.UUID)
+                            .delete()
+                            .execute();
+                });
 
-        await db.queryBuilder('session_data')
-            .where("essid", this.UUID)
-            .execute().then(async qr=>{
-                if(qr.records.length>=1)
-                await db.queryBuilder('session_data')
-                    .where("essid", this.UUID)
-                    .delete()
-                    .execute();
-            });
-
-        await db.disconnect();
+            await db.disconnect();
+        })
     }
 
     async getID(): Promise<string> {
-        return new Promise(async (resolve)=>{
+        return new Promise(async (resolve) => {
             await this.checkUUID();
             resolve(this.UUID);
         });
@@ -113,11 +119,11 @@ export class DBSession {
 }
 
 export class DBSessionStorage {
-    UUID: string;
-    private static con : Connection;
+    private static con: Connection;
 
-    constructor(uuid: string) {
-        this.UUID = uuid;
+    constructor(
+        private session: DBSession) {
+
     }
 
     /**
@@ -125,27 +131,31 @@ export class DBSessionStorage {
      * @param data Data to store into DB
      */
     async store(data: string) {
-        var db = await connect(DBSession.con.connectionobj)
+        this.session.installDB().then(async () => {
+            var db = await connect(DBSession.con.connectionobj)
 
-        db.queryBuilder('session_data')
-            .replace({ essid: this.UUID, data: data })
-            .execute();
+            db.queryBuilder('session_data')
+                .replace({ essid: this.session.UUID, data: data })
+                .execute();
 
-        db.disconnect();
+            db.disconnect();
+        })
     }
 
-    async retrieve() : Promise<object> {
-        return new Promise(async (resolve)=>{
-            var db = await connect(DBSessionStorage.con.connectionobj)
+    async retrieve(): Promise<object> {
+        return new Promise(async (resolve) => {
+            this.session.installDB().then(async () => {
+                var db = await connect(DBSessionStorage.con.connectionobj)
 
-            var result = await db.queryBuilder('session_data')
-                .select('data')
-                .where("essid", this.UUID)
-                .execute();
-    
-            await db.disconnect();
+                var result = await db.queryBuilder('session_data')
+                    .select('data')
+                    .where("essid", this.session.UUID)
+                    .execute();
 
-            resolve(result)
+                await db.disconnect();
+
+                resolve(result)
+            });
         })
     }
 }

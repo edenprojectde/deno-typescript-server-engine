@@ -19,6 +19,9 @@ export class DBSession {
     }
 
     private UUIDchecked=false;
+    /**
+     * Checks if UUID is valid and initializing is done.
+     */
     private checkUUID(): Promise<void> {
         return new Promise((resolve) => {
             if(this.UUIDchecked) resolve();
@@ -60,7 +63,7 @@ export class DBSession {
             DBSession.con.checkTableExists('session_data').catch(() => {
                 DBSession.con.createTable("session_data", [
                     new BaseField('essid').isUnique().setType("VARCHAR(256)"),
-                    new BaseField('data').isUnique().setType("VARCHAR(15)")
+                    new BaseField('data').isUnique().setType("VARCHAR(1524)")
                 ])
             })
         })
@@ -70,6 +73,8 @@ export class DBSession {
      * Fully removes the Session from the Database!!
      */
     async deleteSession() {
+        await this.checkUUID();
+
         var db = await connect(DBSession.con.connectionobj)
 
         await db.queryBuilder('session')

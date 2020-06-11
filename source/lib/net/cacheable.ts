@@ -18,6 +18,9 @@ export class Cache extends BaseDebugable {
 
     constructor() {
         super();
+
+        ensureDirSync(Cache.FlatCachePath);
+        ensureDirSync(Cache.CachePath);
     }
 
     /**

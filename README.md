@@ -11,7 +11,7 @@ What you get into your Body and Components:
 - [X] Functions to load css from a file or add it in-code!
 - [X] Load scripts external or internal, and 
 - [ ] cache them if needed! (1/2 done)
-- [ ] Premate Components to just copy in! [Blog Page, Google Login, Editor, ...]
+- [ ] Premade Components to just copy in! [Blog Page, Google Login, Editor, ...]
 - [ ] Parse content *.pug and handlebars/mustache Templates
 - [X] Static File Directory!
 
